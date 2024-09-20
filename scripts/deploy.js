@@ -1,35 +1,37 @@
-const { ethers, network } = require("hardhat");
+// Import the ethers library from Hardhat
+const { ethers } = require("hardhat");
 
-async function deploy() {
-  const [deployer] = await ethers.getSigners();
+async function main() {
+    const [deployer] = await ethers.getSigners();
 
-  console.log(`Deploying contracts with account: ${deployer.address}`);
+    console.log("Deploying contracts with account:", deployer.address);
 
-  // Deploy GEDStakingToken
-  const Token = await ethers.getContractFactory("GEDStakingToken");
-  const token = await Token.deploy(1000000);
-  await token.waitForDeployment();
+    // Define total supply directly
+    const totalSupply = BigInt(1000000) * BigInt(10 ** 18);
 
-  console.log(`GEDStakingToken deployed to: ${token.address}`);
+    // Deploy the GEDToken contract
+    const GEDToken = await ethers.getContractFactory("GEDStakingToken");
+    const gedToken = await GEDToken.deploy(totalSupply.toString());  
+    await gedToken.deployed();
+    console.log("GEDToken deployed to:", gedToken.address);
 
-  // Deploy GEDNFT
-  const NFT = await ethers.getContractFactory("GEDNFT");
-  const nft = await NFT.deploy("https://brown-definite-snake-356.mypinata.cloud/ipfs/QmcntrmXc2QcByjobpD5og65DeTJJ2fo28wNmjmgKW7Cgt/");
-  await nft.waitForDeployment();
+    // Deploy the GEDNFT contract
+    const GEDNFT = await ethers.getContractFactory("GEDNFT");
+    const gedNFT = await GEDNFT.deploy("https://brown-definite-snake-356.mypinata.cloud/ipfs/QmcntrmXc2QcByjobpD5og65DeTJJ2fo28wNmjmgKW7Cgt/");
+    await gedNFT.deployed();
+    console.log("GEDNFT deployed to:", gedNFT.address);
 
-  console.log(`GEDNFT deployed to: ${nft.address}`);
-
-  // Deploy Staking
-  const Staking = await ethers.getContractFactory("Staking");
-  const staking = await Staking.deploy(token.address, nft.address);
-  await staking.waitForDeployment();
-
-  console.log(`Staking deployed to: ${staking.address}`);
+    // Deploy the Staking contract
+    const Staking = await ethers.getContractFactory("Staking");
+    const stakingContract = await Staking.deploy(gedToken.address, gedNFT.address);
+    await stakingContract.deployed();
+    console.log("Staking contract deployed to:", stakingContract.address);
 }
 
-deploy()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+// Run the main function
+main()
+    .then(() => process.exit(0))
+    .catch((error) => {
+        console.error(error);
+        process.exit(1);
+    });
