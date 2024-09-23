@@ -4,6 +4,9 @@
     "hardhat": "^2.22.11"
   },
   "dependencies": {
-    "dotenv": "^16.4.5"
+    "chai-match": "^1.1.1",
+    "dotenv": "^16.4.5",
+    "hardhat-gas-reporter": "^2.2.1",
+    "sinon": "^19.0.2"
   }
 }

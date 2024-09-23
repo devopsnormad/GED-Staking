@@ -1,37 +1,44 @@
-// Import the ethers library from Hardhat
+const fs = require("fs");
 const { ethers } = require("hardhat");
 
-async function main() {
-    const [deployer] = await ethers.getSigners();
+async function deploy() {
+  const [owner] = await ethers.getSigners();
 
-    console.log("Deploying contracts with account:", deployer.address);
+  // Deploy GEDStakingToken
+  const GEDStakingToken = await ethers.getContractFactory("GEDStakingToken");
+  const token = await GEDStakingToken.deploy(10000);
+  await token.waitForDeployment(); // Wait for deployment to complete
+  const tokenAddress = await token.getAddress();
+  console.log("Token Address:", tokenAddress);
 
-    // Define total supply directly
-    const totalSupply = BigInt(1000000) * BigInt(10 ** 18);
+  // Deploy GEDNFT
+  const GEDNFT = await ethers.getContractFactory("GEDNFT");
+  const nftContract = await GEDNFT.deploy();
+  await nftContract.waitForDeployment();
+  const nftAddress = await nftContract.getAddress();
+  console.log("NFT Contract Address:", nftAddress);
 
-    // Deploy the GEDToken contract
-    const GEDToken = await ethers.getContractFactory("GEDStakingToken");
-    const gedToken = await GEDToken.deploy(totalSupply.toString());  
-    await gedToken.deployed();
-    console.log("GEDToken deployed to:", gedToken.address);
+  // Deploy StakingPool
+  const StakingPool = await ethers.getContractFactory("StakingPool");
+  const stakingPool = await StakingPool.deploy(tokenAddress, nftAddress);
+  await stakingPool.waitForDeployment();
+  const stakingPoolAddress = await stakingPool.getAddress();
+  console.log("Staking Pool Address:", stakingPoolAddress);
 
-    // Deploy the GEDNFT contract
-    const GEDNFT = await ethers.getContractFactory("GEDNFT");
-    const gedNFT = await GEDNFT.deploy("https://brown-definite-snake-356.mypinata.cloud/ipfs/QmcntrmXc2QcByjobpD5og65DeTJJ2fo28wNmjmgKW7Cgt/");
-    await gedNFT.deployed();
-    console.log("GEDNFT deployed to:", gedNFT.address);
+  // Log owner address
+  console.log("Deployed by owner:", owner.address);
 
-    // Deploy the Staking contract
-    const Staking = await ethers.getContractFactory("Staking");
-    const stakingContract = await Staking.deploy(gedToken.address, gedNFT.address);
-    await stakingContract.deployed();
-    console.log("Staking contract deployed to:", stakingContract.address);
+  // Save addresses to a JSON file
+  const addresses = {
+    token: tokenAddress,
+    nft: nftAddress,
+    stakingPool: stakingPoolAddress,
+    owner: owner.address
+  };
+  fs.writeFileSync("deployments.json", JSON.stringify(addresses, null, 2));
 }
 
-// Run the main function
-main()
-    .then(() => process.exit(0))
-    .catch((error) => {
-        console.error(error);
-        process.exit(1);
-    });
+deploy().catch((error) => {
+  console.error("Error during deployment:", error);
+  process.exit(1);
+});
